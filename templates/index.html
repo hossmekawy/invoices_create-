@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block title %}الرئيسية - المكاوي للفواتير{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header text-center bg-primary text-white">
+                <h2>نظام المكاوي للفواتير</h2>
+            </div>
+            <div class="card-body text-center">
+                <h4 class="mb-4">مرحباً بك في نظام إدارة الفواتير</h4>
+                
+                <div class="row mt-5">
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <i class="bi bi-receipt fs-1 text-primary mb-3"></i>
+                                <h5 class="card-title">إدارة الفواتير</h5>
+                                <p class="card-text">إنشاء وعرض وطباعة الفواتير</p>
+                                <a href="{{ url_for('invoices') }}" class="btn btn-primary">الفواتير</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <i class="bi bi-box-seam fs-1 text-primary mb-3"></i>
+                                <h5 class="card-title">إدارة المنتجات</h5>
+                                <p class="card-text">إضافة وتعديل وحذف المنتجات</p>
+                                <a href="{{ url_for('products') }}" class="btn btn-primary">المنتجات</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-5">
+                    <a href="{{ url_for('create_invoice') }}" class="btn btn-success btn-lg">
+                        <i class="bi bi-plus-circle"></i> إنشاء فاتورة جديدة
+                    </a>
+                </div>
+                
+                <!-- QR Code Section -->
+                {% if qr_data and qr_data.available %}
+                <div class="mt-5">
+                    <div class="card">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">الوصول من الهاتف المحمول</h5>
+                        </div>
+                        <div class="card-body">
+                            <p>امسح رمز QR للوصول إلى النظام من هاتفك المحمول</p>
+                            <div class="text-center">
+                                <img src="data:image/png;base64,{{ qr_data.image }}" alt="QR Code" style="max-width: 200px;">
+                            </div>
+                            <p class="mt-2 text-muted">{{ qr_data.url }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% elif qr_data %}
+                <div class="mt-5">
+                    <div class="card">
+                        <div class="card-header bg-warning text-dark">
+                            <h5 class="mb-0">الوصول من الهاتف المحمول</h5>
+                        </div>
+                        <div class="card-body">
+                            <p>تعذر إنشاء رمز QR</p>
+                            <p class="mt-2 text-muted">{{ qr_data.url }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

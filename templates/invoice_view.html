@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block title %}عرض الفاتورة - المكاوي للفواتير{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h3>فاتورة رقم {{ invoice.id }}</h3>
+        <div>
+            <a href="{{ pdf_url }}" target="_blank" class="btn btn-info">
+                <i class="bi bi-eye"></i> عرض PDF
+            </a>
+            <a href="{{ url_for('download_invoice', invoice_id=invoice.id) }}" class="btn btn-primary">
+                <i class="bi bi-download"></i> تحميل PDF
+            </a>
+            <a href="{{ url_for('invoices') }}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> العودة للفواتير
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <h5>معلومات الفاتورة</h5>
+                <p><strong>التاريخ:</strong> {{ invoice.date }}</p>
+                <p><strong>العميل:</strong> {{ invoice.client_name }}</p>
+                <p><strong>تاريخ الإنشاء:</strong> {{ invoice.created_at }}</p>
+            </div>
+            <div class="col-md-6 text-end">
+                <h5>المكاوي للأستيراد و التصدير</h5>
+                <p>أحمد حسين المكاوي</p>
+                <p>الملف الضريبي: 759-903-686</p>
+                <p>السجل التجاري: 114902</p>
+            </div>
+        </div>
+        
+        <div class="table-responsive mb-4">
+            <table class="table table-striped table-bordered">
+                <thead class="table-light">
+                    <tr>
+                        <th>كود</th>
+                        <th>الصنف</th>
+                        <th>السعر</th>
+                        <th>العدد</th>
+                        <th>الإجمالي</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td>{{ item.code }}</td>
+                        <td>{{ item.name }}</td>
+                        <td>{{ item.price }}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td>{{ item.total }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="4" class="text-end"><strong>الإجمالي:</strong></td>
+                        <td><strong>{{ invoice.total_amount }}</strong></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        
+        <div class="text-center">
+            <iframe src="{{ pdf_url }}" width="100%" height="600px" style="border: 1px solid #dee2e6;"></iframe>
+        </div>
+    </div>
+</div>
+{% endblock %}

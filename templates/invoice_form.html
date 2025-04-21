@@ -1,0 +1,263 @@
+
+{% extends 'base.html' %}
+
+{% block title %}إنشاء فاتورة جديدة - المكاوي للفواتير{% endblock %}
+
+{% block styles %}
+<style>
+    .product-row {
+        background-color: #f8f9fa;
+        padding: 10px;
+        margin-bottom: 10px;
+        border-radius: 5px;
+        border: 1px solid #dee2e6;
+    }
+    .remove-row {
+        cursor: pointer;
+        color: #dc3545;
+    }
+    .remove-row:hover {
+        color: #bd2130;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h3>إنشاء فاتورة جديدة</h3>
+    </div>
+    <div class="card-body">
+        <form id="invoiceForm" method="post">
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="date" class="form-label">التاريخ</label>
+                        <input type="date" class="form-control" id="date" name="date" value="{{ today }}" required>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="client_name" class="form-label">اسم العميل</label>
+                        <input type="text" class="form-control" id="client_name" name="client_name" required>
+                    </div>
+                </div>
+            </div>
+            
+            <h4 class="mb-3">المنتجات</h4>
+            
+            <div id="productRows">
+                <!-- Product rows will be added here -->
+            </div>
+            
+            <div class="mb-4">
+                <button type="button" id="addProductRow" class="btn btn-secondary">
+                    <i class="bi bi-plus-circle"></i> إضافة منتج
+                </button>
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-md-6 offset-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <h5 class="mb-0">الإجمالي:</h5>
+                                <h5 id="totalAmount" class="mb-0">0</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-between">
+                <a href="{{ url_for('invoices') }}" class="btn btn-secondary">إلغاء</a>
+                <button type="submit" class="btn btn-primary">إنشاء الفاتورة</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const productRows = document.getElementById('productRows');
+        const addProductRowBtn = document.getElementById('addProductRow');
+        const totalAmountElement = document.getElementById('totalAmount');
+        
+        // Add initial product row
+        addProductRow();
+        
+        // Add product row button click event
+        addProductRowBtn.addEventListener('click', function() {
+            addProductRow();
+        });
+        
+        // Function to add a new product row
+        function addProductRow() {
+            const rowId = Date.now(); // Unique ID for the row
+            const row = document.createElement('div');
+            row.className = 'product-row';
+            row.id = `row-${rowId}`;
+            
+            row.innerHTML = `
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <label class="form-label">كود المنتج</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control product-code" data-row="${rowId}" required>
+                            <button type="button" class="btn btn-outline-secondary search-product" data-row="${rowId}">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <label class="form-label">اسم المنتج</label>
+                        <input type="text" class="form-control product-name" data-row="${rowId}" readonly>
+                        <input type="hidden" name="product_id[]" class="product-id" data-row="${rowId}">
+                    </div>
+                    <div class="col-md-2 mb-2">
+                        <label class="form-label">السعر</label>
+                        <input type="number" class="form-control product-price" name="price[]" data-row="${rowId}" step="0.01" min="0" required>
+                    </div>
+                    <div class="col-md-2 mb-2">
+                        <label class="form-label">العدد</label>
+                        <input type="number" class="form-control product-quantity" name="quantity[]" data-row="${rowId}" min="1" value="1" required>
+                    </div>
+                    <div class="col-md-1 mb-2 d-flex align-items-end">
+                        <button type="button" class="btn btn-link remove-row" data-row="${rowId}">
+                            <i class="bi bi-trash fs-5"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-9"></div>
+                    <div class="col-md-3">
+                        <label class="form-label">الإجمالي</label>
+                        <input type="number" class="form-control product-total" name="total[]" data-row="${rowId}" readonly>
+                    </div>
+                </div>
+            `;
+            
+            productRows.appendChild(row);
+            
+            // Add event listeners for the new row
+            setupRowEventListeners(rowId);
+        }
+        
+        // Function to set up event listeners for a row
+        function setupRowEventListeners(rowId) {
+            const row = document.getElementById(`row-${rowId}`);
+            
+            // Product code search
+            const codeInput = row.querySelector('.product-code');
+            const searchBtn = row.querySelector('.search-product');
+            
+            searchBtn.addEventListener('click', function() {
+                searchProduct(codeInput.value, rowId);
+            });
+            
+            codeInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    searchProduct(codeInput.value, rowId);
+                }
+            });
+            
+            // Calculate total when price or quantity changes
+            const priceInput = row.querySelector('.product-price');
+            const quantityInput = row.querySelector('.product-quantity');
+            
+            priceInput.addEventListener('input', function() {
+                calculateRowTotal(rowId);
+            });
+            
+            quantityInput.addEventListener('input', function() {
+                calculateRowTotal(rowId);
+            });
+            
+            // Remove row button
+            const removeBtn = row.querySelector('.remove-row');
+            removeBtn.addEventListener('click', function() {
+                row.remove();
+                calculateInvoiceTotal();
+            });
+        }
+        
+        // Function to search for a product by code
+        function searchProduct(code, rowId) {
+            if (!code) return;
+            
+            fetch(`/api/products/search?code=${code}`)
+                .then(response => response.json())
+                .then(product => {
+                    const row = document.getElementById(`row-${rowId}`);
+                    
+                    if (product) {
+                        // Fill product details
+                        row.querySelector('.product-id').value = product.id;
+                        row.querySelector('.product-name').value = product.name;
+                        
+
+row.querySelector('.product-price').value = product.price;
+                        
+                        // Calculate total
+                        calculateRowTotal(rowId);
+                    } else {
+                        alert('المنتج غير موجود!');
+                        row.querySelector('.product-code').value = '';
+                        row.querySelector('.product-id').value = '';
+                        row.querySelector('.product-name').value = '';
+                        row.querySelector('.product-price').value = '';
+                        row.querySelector('.product-total').value = '';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error searching for product:', error);
+                    alert('حدث خطأ أثناء البحث عن المنتج');
+                });
+        }
+        
+        // Function to calculate row total
+        function calculateRowTotal(rowId) {
+            const row = document.getElementById(`row-${rowId}`);
+            const price = parseFloat(row.querySelector('.product-price').value) || 0;
+            const quantity = parseInt(row.querySelector('.product-quantity').value) || 0;
+            
+            const total = price * quantity;
+            row.querySelector('.product-total').value = total.toFixed(2);
+            
+            calculateInvoiceTotal();
+        }
+        
+        // Function to calculate invoice total
+        function calculateInvoiceTotal() {
+            const totalInputs = document.querySelectorAll('.product-total');
+            let invoiceTotal = 0;
+            
+            totalInputs.forEach(input => {
+                invoiceTotal += parseFloat(input.value) || 0;
+            });
+            
+            totalAmountElement.textContent = invoiceTotal.toFixed(2);
+        }
+        
+        // Form validation before submit
+        document.getElementById('invoiceForm').addEventListener('submit', function(e) {
+            const productIds = document.querySelectorAll('.product-id');
+            let hasProducts = false;
+            
+            productIds.forEach(input => {
+                if (input.value) {
+                    hasProducts = true;
+                }
+            });
+            
+            if (!hasProducts) {
+                e.preventDefault();
+                alert('يجب إضافة منتج واحد على الأقل للفاتورة!');
+            }
+        });
+    });
+</script>
+{% endblock %}
