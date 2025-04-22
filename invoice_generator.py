@@ -350,8 +350,12 @@ def generate_invoice_pdf(invoice_id):
     
     # Specify the path to wkhtmltopdf based on your operating system
     # For Windows (example path, adjust to your installation):
-    wkhtmltopdf_path = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
-    
+    try:
+        wkhtmltopdf_path = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
+        if not os.path.exists(wkhtmltopdf_path):
+            wkhtmltopdf_path = '/usr/local/bin/wkhtmltopdf'
+    except:
+        wkhtmltopdf_path = '/usr/local/bin/wkhtmltopdf'     
     # For macOS (if installed via Homebrew):
     # wkhtmltopdf_path = '/usr/local/bin/wkhtmltopdf'
     
